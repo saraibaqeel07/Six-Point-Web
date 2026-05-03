@@ -1,28 +1,85 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import Button from "@/app/components/elements/Button";
 import InputField from "@/app/components/elements/InputField";
+import { loginService } from "@/app/lib/apiServices";
+import { useAuth } from "@/app/context/AuthContext";
+import { toast } from "sonner";
 
 export default function LoginPage() {
-  const [form, setForm] = useState({
-    username: "",
-    password: "",
-  });
+  const router = useRouter();
+  const { login, isAuthenticated } = useAuth();
 
-const handleChange = (field) => (e) => {
-  setForm({ ...form, [field]: e.target.value });
-};
+  // Navigate only after React has committed the isAuthenticated state update
+  useEffect(() => {
+    if (isAuthenticated) {
+      router.push("/dashboard");
+    }
+  }, [isAuthenticated, router]);
 
-const handleSubmit = (e) => {
-  e.preventDefault();
-  console.log("Login form submitted:", form);
-};
+  const [form, setForm] = useState({ email: "", password: "" });
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const handleChange = (field) => (e) => {
+    setForm({ ...form, [field]: e.target.value });
+    setError("");
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError("");
+    try {
+      const data = await loginService(form.email, form.password);
+
+      const user = data.user || data.data || {};
+
+      // Unverified account — store email and go to OTP page
+      if (user.isVerified === false) {
+        sessionStorage.setItem("pending_email", user.email || form.email);
+        sessionStorage.setItem("otp_purpose", "REGISTER");
+        toast.info("Please verify your account. OTP sent to your email.");
+        router.push("/otp");
+        return;
+      }
+
+      const token =
+        data.token ||
+        data.access_token ||
+        data.accessToken ||
+        data.jwt ||
+        data.data?.token ||
+        data.data?.access_token ||
+        data.data?.accessToken;
+
+      if (!token) {
+        toast.error("Login failed: no token received from server.");
+        return;
+      }
+
+      login(token, user);
+      toast.success("Logged in successfully!");
+    } catch (err) {
+      const raw = err.response?.data?.message || err.message || "Login failed. Please try again.";
+      if (Array.isArray(raw)) {
+        raw.forEach((msg) => toast.error(msg));
+        setError(raw.join(", "));
+      } else {
+        toast.error(raw);
+        setError(raw);
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-[#1f1919] text-white">
       <div className="min-h-screen grid grid-cols-1 lg:grid-cols-2">
-        
+
         {/* Left side */}
         <div className="flex items-center justify-center px-4 py-10 sm:px-6 lg:px-10">
           <div className="w-full max-w-md">
@@ -31,16 +88,18 @@ const handleSubmit = (e) => {
                 Login to your account
               </h1>
               <p className="mt-2 text-xs sm:text-sm text-white/70">
-                Enter your username and password to continue.
+                Enter your email and password to continue.
               </p>
             </div>
 
             <form onSubmit={handleSubmit} className="flex flex-col gap-5">
               <InputField
-                label="Username"
-                placeholder="Enter your username"
-                value={form.username}
-                onChange={handleChange("username")}
+                label="Email"
+                type="email"
+                placeholder="Enter your email"
+                value={form.email}
+                onChange={handleChange("email")}
+                required
               />
 
               <InputField
@@ -49,20 +108,27 @@ const handleSubmit = (e) => {
                 placeholder="Enter your password"
                 value={form.password}
                 onChange={handleChange("password")}
+                required
               />
 
+              {error && (
+                <p className="text-xs text-red-400">{error}</p>
+              )}
+
               <div className="pt-2">
-                <Button className="inline-flex w-full justify-center">
-                  Login
+                <Button
+                  type="submit"
+                  className="inline-flex w-full justify-center"
+                  disabled={loading}
+                >
+                  {loading ? "Logging in…" : "Login"}
                 </Button>
               </div>
             </form>
 
-            <div className="mt-6 flex items-center gap-3">
+            {/* <div className="mt-6 flex items-center gap-3">
               <div className="h-px flex-1 bg-white/10" />
-              <span className="text-xs sm:text-sm text-white/60">
-                or continue with
-              </span>
+              <span className="text-xs sm:text-sm text-white/60">or continue with</span>
               <div className="h-px flex-1 bg-white/10" />
             </div>
 
@@ -70,13 +136,17 @@ const handleSubmit = (e) => {
               <SocialButton icon="/assets/facebook.png" label="Facebook" />
               <SocialButton icon="/assets/google.png" label="Google" />
               <SocialButton icon="/assets/instagram.png" label="Instagram" />
-            </div>
+            </div> */}
 
             <div className="mt-6 flex items-center justify-between gap-3 rounded-2xl border border-white/10 bg-white/5 px-4 py-4">
               <p className="text-xs sm:text-sm text-white/70">
-                Don’t have an account?
+                Don&apos;t have an account?
               </p>
-              <Button className="inline-flex justify-center px-5 py-2">
+              <Button
+                type="button"
+                className="inline-flex justify-center px-5 py-2"
+                onClick={() => router.push("/signup")}
+              >
                 Sign Up
               </Button>
             </div>
@@ -92,6 +162,7 @@ const handleSubmit = (e) => {
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/45 via-black/10 to-transparent" />
         </div>
+
       </div>
     </div>
   );

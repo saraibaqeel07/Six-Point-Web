@@ -1,9 +1,27 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import PageHeader from "@/app/components/dashboard/pageHeader";
-import Button from "@/app/components/elements/Button";
 import SevenDaysCalendar from "@/app/components/dashboard/SevenDaysCalendar";
+import { getClientBookingsService } from "@/app/lib/apiServices";
+import { toast } from "sonner";
+
+const STATUS_FILTERS = [
+  { key: "", label: "All" },
+  { key: "PENDING", label: "Pending" },
+  { key: "APPROVED", label: "Approved" },
+  { key: "REJECTED", label: "Rejected" },
+  { key: "CANCELLED", label: "Cancelled" },
+];
+
+const STATUS_STYLES = {
+  PENDING: "bg-yellow-500/15 text-yellow-400 border-yellow-500/30",
+  APPROVED: "bg-green-500/15 text-green-400 border-green-500/30",
+  REJECTED: "bg-red-500/15 text-red-400 border-red-500/30",
+  CANCELLED: "bg-white/10 text-white/50 border-white/20",
+};
+
+const MONTHS_SHORT = ["JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"];
 
 function isSameDay(a, b) {
   if (!a || !b) return false;
@@ -14,213 +32,240 @@ function isSameDay(a, b) {
   );
 }
 
-const classes = [
-  {
-    title: "Fundamentals Class",
-    category: "adults",
-    coach: "John Cena",
-    date: new Date(2026, 5, 10),
-    time: "6:00 PM - 7:00 PM",
-    image: "/assets/competitions.png",
-    slotsLeft: 10,
-  },
-  {
-    title: "Kids Jiu-Jitsu",
-    category: "kids",
-    coach: "Mikasa",
-    date: new Date(2026, 4, 1),
-    time: "5:00 PM - 6:00 PM",
-    image: "/assets/special-training-camps.png",
-    slotsLeft: 8,
-  },
-  {
-    title: "Teen Grappling",
-    category: "teens",
-    coach: "John Cena",
-    date: new Date(2026, 4, 30),
-    time: "6:30 PM - 7:30 PM",
-    image: "/assets/international-seminars.png",
-    slotsLeft: 6,
-  },
-  {
-    title: "Toddlers Movement",
-    category: "toddlers",
-    coach: "Sasha",
-    date: new Date(2026, 3, 10),
-    time: "4:00 PM - 4:45 PM",
-    image: "/assets/community-events.png",
-    slotsLeft: 12,
-  },
-  {
-    title: "Ladies Only Class",
-    category: "ladies",
-    coach: "Amina",
-    date: new Date(2026, 3, 15),
-    time: "7:00 PM - 8:00 PM",
-    image: "/assets/competitions.png",
-    slotsLeft: 9,
-  },
-  {
-    title: "Open Mat Session",
-    category: "adults",
-    coach: "Amina",
-    date: new Date(2026, 3, 1),
-    time: "8:00 PM - 9:00 PM",
-    image: "/assets/community-events.png",
-    slotsLeft: 5,
-  },
-];
+function getBookingDate(booking) {
+  const raw =
+    booking?.session?.date ||
+    booking?.sessionDate ||
+    booking?.date ||
+    booking?.createdAt;
+  return raw ? new Date(raw) : null;
+}
+
+function formatDate(dateStr) {
+  if (!dateStr) return "—";
+  return new Date(dateStr).toLocaleDateString("en-US", {
+    day: "numeric", month: "short", year: "numeric",
+  });
+}
 
 export default function BookingsPage() {
-  const [categoryFilter, setCategoryFilter] = useState("all");
-  const [coachFilter, setCoachFilter] = useState("all");
+  const [bookings, setBookings] = useState([]);
+  const [statusFilter, setStatusFilter] = useState("");
   const [selectedDate, setSelectedDate] = useState(null);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [loading, setLoading] = useState(false);
 
-  const MONTHS_SHORT = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
+  const LIMIT = 10;
 
-  const coaches = ["all", "John Cena", "Mikasa", "Sasha", "Amina"];
+  const fetchBookings = useCallback(async (status, currentPage) => {
+    setLoading(true);
+    try {
+      const data = await getClientBookingsService({ status, page: currentPage, limit: LIMIT });
+      const list = data?.data || data?.bookings || data?.items || (Array.isArray(data) ? data : []);
+      const total = data?.total || data?.totalCount || list.length;
+      setBookings(list);
+      setTotalPages(Math.max(1, Math.ceil(total / LIMIT)));
+    } catch (err) {
+      const msg = err.response?.data?.message || err.message || "Failed to load bookings.";
+      toast.error(Array.isArray(msg) ? msg.join(", ") : msg);
+      setBookings([]);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
-  const categoryButtons = [
-    { key: "all", label: "All" },
-    { key: "adults", label: "Adults" },
-    { key: "kids", label: "Kids" },
-    { key: "teens", label: "Teens" },
-    { key: "toddlers", label: "Toddlers" },
-    { key: "ladies", label: "Ladies Only" },
-  ];
+  useEffect(() => {
+    fetchBookings(statusFilter, page);
+  }, [statusFilter, page, fetchBookings]);
 
-  const filteredClasses = useMemo(() => {
-    return classes.filter((item) => {
-      const matchesCategory =
-        categoryFilter === "all" ? true : item.category === categoryFilter;
+  const handleStatusChange = (key) => {
+    setStatusFilter(key);
+    setSelectedDate(null);
+    setPage(1);
+  };
 
-      const matchesCoach =
-        coachFilter === "all" ? true : item.coach === coachFilter;
+  // Map bookings to calendar event format (needs a .date Date object and .title)
+  const calendarEvents = useMemo(() =>
+    bookings
+      .map((b) => {
+        const d = getBookingDate(b);
+        return d ? { ...b, date: d, title: b?.session?.title || b?.title || "Booking" } : null;
+      })
+      .filter(Boolean),
+  [bookings]);
 
-      const matchesDate = selectedDate ? isSameDay(item.date, selectedDate) : true;
-
-      return matchesCategory && matchesCoach && matchesDate;
-    });
-  }, [categoryFilter, coachFilter, selectedDate]);
+  // Date filter is applied on the frontend from the already-fetched list
+  const displayedBookings = useMemo(() => {
+    if (!selectedDate) return bookings;
+    return bookings.filter((b) => isSameDay(getBookingDate(b), selectedDate));
+  }, [bookings, selectedDate]);
 
   return (
     <>
       <PageHeader title="Bookings" />
 
-      <div className="space-y-10">
+      <div className="space-y-6">
+
+        {/* Calendar */}
         <SevenDaysCalendar
-         mode="week"
+          mode="week"
           selectedDate={selectedDate}
-          onSelectDate={setSelectedDate}
-          events={classes}
+          onSelectDate={(d) => setSelectedDate(isSameDay(d, selectedDate) ? null : d)}
+          events={calendarEvents}
           className="w-full"
         />
 
-        <section className="border border-white/10 bg-[#2d2525] p-5 lg:p-6">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-            <div>
-              <h2 className="text-lg font-medium">Book a Class</h2>
-              <p className="mt-1 text-sm text-white/70">
-                Choose a date, category, and coach to filter available classes.
-              </p>
-            </div>
-
-            <div className="w-full lg:w-[260px]">
-              <label className="mb-2 block text-sm text-white/70">Coach</label>
-              <select
-                value={coachFilter}
-                onChange={(e) => setCoachFilter(e.target.value)}
-                className="w-full border border-white/10 bg-[#1f1919] px-4 py-3 text-sm text-white outline-none"
-              >
-                {coaches.map((coach) => (
-                  <option key={coach} value={coach}>
-                    {coach === "all" ? "All Coaches" : coach}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-        </section>
-
+        {/* Status filter tabs */}
         <div className="flex flex-wrap gap-2">
-          {categoryButtons.map((item) => (
+          {STATUS_FILTERS.map(({ key, label }) => (
             <button
-              key={item.key}
-              onClick={() => setCategoryFilter(item.key)}
-              className={`rounded-xl border px-4 py-2 text-sm transition ${categoryFilter === item.key
-                  ? "border-white bg-white text-[#1f1919]"
-                  : "border-white/10 bg-transparent text-white/75 hover:bg-white/5"
-                }`}
+              key={key}
+              onClick={() => handleStatusChange(key)}
+              className={`rounded-xl border px-4 py-2 text-sm transition ${
+                statusFilter === key
+                  ? "border-white bg-white text-[#1f1919] font-medium"
+                  : "border-white/10 bg-transparent text-white/70 hover:bg-white/5"
+              }`}
             >
-              {item.label}
+              {label}
             </button>
           ))}
-        </div>
 
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-3">
-          {filteredClasses.map((item, index) => (
-            <div
-              key={index}
-              className="group overflow-hidden border border-white/10 bg-[#2d2525]"
+          {selectedDate && (
+            <button
+              onClick={() => setSelectedDate(null)}
+              className="rounded-xl border border-white/20 bg-white/5 px-4 py-2 text-sm text-white/70 hover:bg-white/10 transition"
             >
-              <div className="relative overflow-hidden">
-                <img
-                  src={item.image}
-                  alt={item.title}
-                  className="h-[220px] w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                />
-                <div className="absolute left-4 top-4 rounded-full bg-black/70 px-3 py-1 text-xs text-white backdrop-blur-sm">
-                  {item.coach}
-                </div>
-              </div>
-
-              <div className="flex gap-4 p-5">
-                <div className="min-w-[52px] text-center font-bold text-purple-400">
-                  <span className="text-sm">
-                    {MONTHS_SHORT[item.date.getMonth()]}
-                  </span>
-                  <span className="block text-3xl leading-none text-white">
-                    {item.date.getDate()}
-                  </span>
-                </div>
-
-                <div className="flex-1">
-                  <h3 className="mb-1 text-lg font-medium">{item.title}</h3>
-
-                  <p className="text-xs tracking-[0.12em] text-white/70 sm:text-sm">
-                    Time: {item.time}
-                  </p>
-                  <p className="text-xs tracking-[0.12em] text-white/70 sm:text-sm">
-                    Date: {item.date.toDateString()}
-                  </p>
-                  <p className="mt-1 text-xs tracking-[0.12em] text-white/70 sm:text-sm">
-                    Venue: Training Mat 2
-                  </p>
-
-                  <div className="mt-4 flex items-center gap-3">
-                    <img
-                      src="/assets/profile.png"
-                      alt="Coach"
-                      className="h-10 w-10 rounded-full border border-white/10 object-cover"
-                    />
-                    <p className="text-sm text-white/70">
-                      <span className="font-medium text-white">{item.slotsLeft}</span>  Slots Left
-                    </p>
-
-                  </div>
-
-                  <Button className="mt-4 w-full">Book Now</Button>
-                </div>
-              </div>
-            </div>
-          ))}
+              {selectedDate.toLocaleDateString("en-US", { month: "short", day: "numeric" })} ✕
+            </button>
+          )}
         </div>
 
-        {filteredClasses.length === 0 && (
-          <div className="border border-white/10 bg-[#2d2525] p-8 text-center text-white/70">
-            No classes match your selected date and filters.
+        {/* Loading skeletons */}
+        {loading && (
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="h-48 animate-pulse rounded-xl border border-white/10 bg-white/5" />
+            ))}
           </div>
         )}
+
+        {/* Bookings grid */}
+        {!loading && displayedBookings.length > 0 && (
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+            {displayedBookings.map((booking, index) => {
+              const session = booking.session || booking.class || booking.program || {};
+              const coach = booking.coach || session.coach || {};
+              const status = booking.status || "PENDING";
+              const bookingDate = getBookingDate(booking);
+
+              return (
+                <div
+                  key={booking._id || booking.id || index}
+                  className="group overflow-hidden border border-white/10 bg-[#2d2525]"
+                >
+                  {/* Image */}
+                  {(session.image || session.thumbnail) && (
+                    <div className="relative overflow-hidden">
+                      <img
+                        src={session.image || session.thumbnail}
+                        alt={session.title || "Booking"}
+                        className="h-[180px] w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                      />
+                    </div>
+                  )}
+
+                  <div className="flex gap-4 p-5">
+                    {/* Date column */}
+                    {bookingDate && (
+                      <div className="min-w-[52px] text-center font-bold text-purple-400">
+                        <span className="text-sm">{MONTHS_SHORT[bookingDate.getMonth()]}</span>
+                        <span className="block text-3xl leading-none text-white">
+                          {bookingDate.getDate()}
+                        </span>
+                      </div>
+                    )}
+
+                    {/* Details */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between gap-2 mb-2">
+                        <h3 className="font-medium text-white truncate">
+                          {session.title || session.name || booking.title || `Booking #${index + 1}`}
+                        </h3>
+                        <span className={`shrink-0 rounded-full border px-2 py-0.5 text-xs font-medium ${STATUS_STYLES[status] || STATUS_STYLES.PENDING}`}>
+                          {status}
+                        </span>
+                      </div>
+
+                      {(session.time || booking.time) && (
+                        <p className="text-xs text-white/60">Time: {session.time || booking.time}</p>
+                      )}
+
+                      {(coach.name || coach.fullName) && (
+                        <div className="mt-3 flex items-center gap-2">
+                          <img
+                            src="/assets/profile.png"
+                            alt="Coach"
+                            className="h-8 w-8 rounded-full border border-white/10 object-cover"
+                          />
+                          <p className="text-sm text-white/70">{coach.name || coach.fullName}</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Empty state */}
+        {!loading && displayedBookings.length === 0 && (
+          <div className="border border-white/10 bg-[#2d2525] p-10 text-center text-white/50">
+            No bookings found
+            {statusFilter ? ` with status "${statusFilter}"` : ""}
+            {selectedDate ? ` on ${selectedDate.toLocaleDateString("en-US", { month: "long", day: "numeric" })}` : ""}.
+          </div>
+        )}
+
+        {/* Pagination */}
+        {!selectedDate && totalPages > 1 && (
+          <div className="flex items-center justify-center gap-2">
+            <button
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              disabled={page === 1}
+              className="rounded-xl border border-white/10 px-4 py-2 text-sm text-white/70 hover:bg-white/5 disabled:opacity-30 disabled:cursor-not-allowed transition"
+            >
+              Previous
+            </button>
+
+            <div className="flex gap-1">
+              {Array.from({ length: totalPages }).map((_, i) => (
+                <button
+                  key={i}
+                  onClick={() => setPage(i + 1)}
+                  className={`h-9 w-9 rounded-xl border text-sm transition ${
+                    page === i + 1
+                      ? "border-white bg-white text-[#1f1919] font-medium"
+                      : "border-white/10 text-white/60 hover:bg-white/5"
+                  }`}
+                >
+                  {i + 1}
+                </button>
+              ))}
+            </div>
+
+            <button
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              disabled={page === totalPages}
+              className="rounded-xl border border-white/10 px-4 py-2 text-sm text-white/70 hover:bg-white/5 disabled:opacity-30 disabled:cursor-not-allowed transition"
+            >
+              Next
+            </button>
+          </div>
+        )}
+
       </div>
     </>
   );
