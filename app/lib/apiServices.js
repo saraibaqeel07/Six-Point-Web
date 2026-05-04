@@ -79,6 +79,18 @@ export const getNextClassService = async () => {
   return data;
 };
 
+// ── Progress ──────────────────────────────────────────────────────────────────
+
+export const getMyProgressService = async () => {
+  const { data } = await axiosInstance.get(ROUTES.PROGRESS.MY_PROGRESS);
+  return data;
+};
+
+export const getMyNotesService = async () => {
+  const { data } = await axiosInstance.get(ROUTES.PROGRESS.MY_NOTES);
+  return data;
+};
+
 // ── Users ─────────────────────────────────────────────────────────────────────
 
 export const updateUserService = async (id, payload) => {

@@ -33,6 +33,10 @@ const ROUTES = {
   USERS: {
     UPDATE: (id) => `/api/users/${id}`,
   },
+  PROGRESS: {
+    MY_PROGRESS: "/api/progress-notes/my-progress",
+    MY_NOTES: "/api/progress-notes/my-notes",
+  },
   TRANSACTIONS: {
     MY_WALLET: "/api/transactions/my-wallet",
     MY_HISTORY: "/api/transactions/my-history",
