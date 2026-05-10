@@ -79,15 +79,17 @@ export default function MyProgressPage() {
               {latestNote ? (
                 <>
                   <blockquote className="text-lg text-white/70 italic tracking-tight my-3 border-l-2 border-white/20 pl-3">
-                    <p>{latestNote.note || latestNote.content || String(latestNote)}</p>
+                    <p>{latestNote.remarks || latestNote.note || latestNote.content}</p>
                   </blockquote>
-                  {latestNote.updatedAt && (
+                  {(latestNote.date || latestNote.updatedAt) && (
                     <p className="text-sm text-white/70 mt-1">
-                      Last Updated: {new Date(latestNote.updatedAt).toLocaleDateString()}
+                      Last Updated: {new Date(latestNote.date || latestNote.updatedAt).toLocaleDateString()}
                     </p>
                   )}
-                  {latestNote.coach?.fullName && (
-                    <p className="text-sm text-white/70 mt-1">Coach: Prof. {latestNote.coach.fullName}</p>
+                  {(latestNote.coach || latestNote.coach?.fullName) && (
+                    <p className="text-sm text-white/70 mt-1">
+                      Coach: {typeof latestNote.coach === "string" ? latestNote.coach : latestNote.coach.fullName}
+                    </p>
                   )}
                 </>
               ) : (
@@ -135,15 +137,17 @@ export default function MyProgressPage() {
                 notes.map((n, i) => (
                   <div key={n._id || i} className="bg-[#2d2525] border border-white/10 p-4 rounded-lg">
                     <blockquote className="text-white/80 italic text-sm border-l-2 border-white/20 pl-3">
-                      {n.note || n.content || String(n)}
+                      {n.remarks || n.note || n.content}
                     </blockquote>
                     <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1">
-                      {n.coach?.fullName && (
-                        <span className="text-xs text-white/50">Prof. {n.coach.fullName}</span>
+                      {(n.coach || n.coach?.fullName) && (
+                        <span className="text-xs text-white/50">
+                          {typeof n.coach === "string" ? n.coach : n.coach.fullName}
+                        </span>
                       )}
-                      {n.updatedAt && (
+                      {(n.date || n.updatedAt) && (
                         <span className="text-xs text-white/40">
-                          {new Date(n.updatedAt).toLocaleDateString("en-US", {
+                          {new Date(n.date || n.updatedAt).toLocaleDateString("en-US", {
                             year: "numeric",
                             month: "short",
                             day: "numeric",

@@ -89,7 +89,7 @@ export default function ProgramsPage() {
               id={program._id}
               title={program.name || program.title || "—"}
               duration={program.duration ? `${program.duration} MIN` : "—"}
-              level={program.level || program.difficultyLevel || "ALL LEVEL"}
+              level={program.level || program.difficultyLevel}
               image={program.image || program.thumbnail || program.imageUrl || FALLBACK_IMAGES[index % FALLBACK_IMAGES.length]}
               description={program.description}
             />
@@ -141,9 +141,9 @@ function ProgramCard({ id, title, duration, level, image, description }) {
               {title}
             </h3>
 
-            <p className="mt-2 text-xs sm:text-sm tracking-[0.18em] uppercase text-white/70">
+            {/* <p className="mt-2 text-xs sm:text-sm tracking-[0.18em] uppercase text-white/70">
               {duration} | {level}
-            </p>
+            </p> */}
 
             {description && (
               <p className="mt-2 text-xs text-white/50 line-clamp-2">{description}</p>

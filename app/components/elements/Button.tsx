@@ -9,6 +9,8 @@ type ButtonProps = {
   onClick?: () => void;
   className?: string;
   variant?: "primary" | "secondary";
+  type?: "button" | "submit" | "reset";
+  disabled?: boolean;
 };
 
 export default function Button({
@@ -17,16 +19,19 @@ export default function Button({
   onClick,
   className = "",
   variant = "primary",
+  type = "button",
+  disabled = false,
 }: ButtonProps) {
   const baseStyles = `
     inline-flex items-center justify-center
     px-6 md:px-7
-    py-2 md:py-2.5 
-    font-medium 
-    transition-all duration-300 
+    py-2 md:py-2.5
+    font-medium
+    transition-all duration-300
     text-[11px] md:text-[12px]
-   whitespace-normal break-words text-center leading-snug
+    whitespace-normal break-words text-center leading-snug
     uppercase
+    cursor-pointer
   `;
 
   const variants = {
@@ -53,7 +58,7 @@ export default function Button({
   }
 
   return (
-    <button onClick={onClick} className={classes}>
+    <button type={type} onClick={onClick} disabled={disabled} className={classes}>
       {children}
     </button>
   );

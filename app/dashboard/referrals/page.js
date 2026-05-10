@@ -35,6 +35,7 @@ export default function ReferralsPage() {
   useEffect(() => { fetchReferrals(); }, []);
 
   const handleChange = (field) => (e) => setForm({ ...form, [field]: e.target.value });
+  const handlePhoneChange = (e) => setForm({ ...form, phoneNumber: e.target.value.replace(/\D/g, "") });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -84,9 +85,10 @@ export default function ReferralsPage() {
             <InputField
               label="Phone Number"
               type="tel"
+              inputMode="numeric"
               placeholder="000-000-000"
               value={form.phoneNumber}
-              onChange={handleChange("phoneNumber")}
+              onChange={handlePhoneChange}
             />
           </div>
         </div>

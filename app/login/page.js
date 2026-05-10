@@ -20,18 +20,18 @@ export default function LoginPage() {
   }, [isAuthenticated, router]);
 
   const [form, setForm] = useState({ email: "", password: "" });
-  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
   const handleChange = (field) => (e) => {
     setForm({ ...form, [field]: e.target.value });
-    setError("");
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const handleSubmit = async () => {
+    if (!form.email || !form.password) {
+      toast.error("Please enter your email and password.");
+      return;
+    }
     setLoading(true);
-    setError("");
     try {
       const data = await loginService(form.email, form.password);
 
@@ -66,10 +66,8 @@ export default function LoginPage() {
       const raw = err.response?.data?.message || err.message || "Login failed. Please try again.";
       if (Array.isArray(raw)) {
         raw.forEach((msg) => toast.error(msg));
-        setError(raw.join(", "));
       } else {
         toast.error(raw);
-        setError(raw);
       }
     } finally {
       setLoading(false);
@@ -77,11 +75,11 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#1f1919] text-white">
-      <div className="min-h-screen grid grid-cols-1 lg:grid-cols-2">
+    <div className="h-screen overflow-hidden bg-[#1f1919] text-white">
+      <div className="h-full grid grid-cols-1 lg:grid-cols-2">
 
         {/* Left side */}
-        <div className="flex items-center justify-center px-4 py-10 sm:px-6 lg:px-10">
+        <div className="flex items-center justify-center px-4 py-10 sm:px-6 lg:px-10 overflow-y-auto">
           <div className="w-full max-w-md">
             <div className="mb-8">
               <h1 className="text-2xl sm:text-3xl lg:text-4xl font-semibold leading-tight">
@@ -92,14 +90,13 @@ export default function LoginPage() {
               </p>
             </div>
 
-            <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+            <div className="flex flex-col gap-5">
               <InputField
                 label="Email"
                 type="email"
                 placeholder="Enter your email"
                 value={form.email}
                 onChange={handleChange("email")}
-                required
               />
 
               <InputField
@@ -108,23 +105,19 @@ export default function LoginPage() {
                 placeholder="Enter your password"
                 value={form.password}
                 onChange={handleChange("password")}
-                required
               />
-
-              {error && (
-                <p className="text-xs text-red-400">{error}</p>
-              )}
 
               <div className="pt-2">
                 <Button
-                  type="submit"
+                  type="button"
                   className="inline-flex w-full justify-center"
                   disabled={loading}
+                  onClick={handleSubmit}
                 >
                   {loading ? "Logging in…" : "Login"}
                 </Button>
               </div>
-            </form>
+            </div>
 
             {/* <div className="mt-6 flex items-center gap-3">
               <div className="h-px flex-1 bg-white/10" />
@@ -154,7 +147,7 @@ export default function LoginPage() {
         </div>
 
         {/* Right side */}
-        <div className="relative min-h-[320px] lg:min-h-screen overflow-hidden">
+        <div className="hidden lg:block relative overflow-hidden">
           <img
             src="/assets/login.png"
             alt="Login"

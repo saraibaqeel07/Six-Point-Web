@@ -101,7 +101,7 @@ export default function BookProgramPage() {
                     <p className="text-sm text-gray-400">
                       With {item.coachId?.fullName || "TBA"}
                     </p>
-                    <p className="text-xs text-gray-500 mt-1">1 hour · All levels</p>
+                    {/* <p className="text-xs text-gray-500 mt-1">1 hour · All levels</p> */}
                   </div>
 
                   <div className="flex flex-col items-end gap-3 shrink-0 ml-4">

@@ -75,7 +75,7 @@ export default function DashboardShell({ children }: Props) {
           </div>
 
           {/* Menu */}
-          <nav className="flex-1 overflow-y-auto">
+          <nav className="flex-1 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
             <ul className="space-y-2">
               {items.map(({ label, href, icon }) => {
                 const active = pathname === href || (href !== "/dashboard" && pathname.startsWith(href));
