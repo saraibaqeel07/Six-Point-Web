@@ -12,7 +12,7 @@ const page = () => {
     <PageWrapper>
       <HeroSection />
       <TeamSection />
-      <BrazilianCoachSection />
+      {/* <BrazilianCoachSection /> */}
       <PhilosophySection />
       <BookAppSection />
       <LocationSection />

@@ -68,7 +68,7 @@ export default function TeamPage() {
             <br />
             Assisted UFC legend Demian Maia during training camps.
           </p>
-          <div className="flex justify-center mt-5"> <Button href="#" className="hidden sm:inline-flex">
+          <div className="flex justify-center mt-5"> <Button href="/dashboard/book-class" className="hidden sm:inline-flex">
             Book now
           </Button></div>
 
@@ -115,7 +115,7 @@ With a solid international competitive background, Luiz has achieved significant
           </p>
 
 
-          <div className="flex justify-center mt-5"> <Button href="#" className="hidden sm:inline-flex">
+          <div className="flex justify-center mt-5"> <Button href="/dashboard/book-class" className="hidden sm:inline-flex">
             Book now
           </Button></div>
 

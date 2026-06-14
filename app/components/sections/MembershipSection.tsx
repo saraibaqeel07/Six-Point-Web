@@ -1,6 +1,7 @@
 // components/MembershipSection.tsx
-import React from 'react';
+"use client";
 import { BiCheck } from 'react-icons/bi';
+import BookClassButton from "@/app/components/elements/BookClassButton";
 // or just use text ✓ if you don't want extra dependency
 
 const plans = [
@@ -143,14 +144,10 @@ const MembershipSection = () => {
                 </ul>
 
                 {/* Button */}
-                <div className="text-center bg-[#DDDBD8] text-black  mt-5 mt-auto">
-                  <button
-                    className={`
-                     py-4  font-medium text-base uppercase transition-all
-                  `}
-                  >
-                    BOOK A CLASS 
-                  </button>
+                <div className="text-center bg-[#DDDBD8] text-black mt-5 mt-auto">
+                  <BookClassButton className="w-full py-4 font-medium text-base uppercase transition-all">
+                    BOOK A CLASS
+                  </BookClassButton>
                 </div>
 
               </div>

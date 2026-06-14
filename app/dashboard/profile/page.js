@@ -62,7 +62,8 @@ export default function ProfilePage() {
   }, [user, reset]);
 
   const onSubmit = async (values) => {
-    if (!user?._id) return;
+    const userId = user?._id || user?.id;
+    if (!userId) return;
     setSaving(true);
     try {
       const payload = {
@@ -73,7 +74,7 @@ export default function ProfilePage() {
       };
       if (values.password) payload.password = values.password;
 
-      const res = await updateUserService(user._id, payload);
+      const res = await updateUserService(userId, payload);
       toast.success("Profile updated successfully!");
 
       // refresh auth user if response contains updated user
@@ -204,7 +205,7 @@ export default function ProfilePage() {
               </div>
 
               <div className="flex justify-end">
-                <Button className="inline-flex" disabled={saving}>
+                <Button type="submit" className="inline-flex" disabled={saving}>
                   {saving ? "Saving…" : "Save"}
                 </Button>
               </div>

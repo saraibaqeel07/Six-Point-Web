@@ -1,7 +1,12 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
-import { Clock, Users } from "lucide-react";
+import { Clock, Users, Calendar } from "lucide-react";
+
+function formatDate(dateStr) {
+  if (!dateStr) return null;
+  return new Date(dateStr).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" });
+}
 import { useParams, useSearchParams } from "next/navigation";
 import PageHeader from "@/app/components/dashboard/pageHeader";
 import { getAvailableSlotsService, createBookingService } from "@/app/lib/apiServices";
@@ -86,11 +91,19 @@ export default function BookProgramPage() {
                 key={item._id}
                 className="overflow-hidden rounded-lg border border-white/10 bg-gradient-to-br from-[#2c2c2c] via-[#1a1a1a] to-[#000]"
               >
-                <div className="flex items-center gap-2 px-4 pt-4">
-                  <Clock size={14} className="text-purple-400" />
-                  <span className="text-xs text-gray-300">
-                    {item.timeslotId?.startTime} – {item.timeslotId?.endTime}
-                  </span>
+                <div className="flex items-center gap-4 px-4 pt-4">
+                  <div className="flex items-center gap-2">
+                    <Clock size={14} className="text-purple-400" />
+                    <span className="text-xs text-gray-300">
+                      {item.timeslotId?.startTime} – {item.timeslotId?.endTime}
+                    </span>
+                  </div>
+                  {formatDate(item.createdAt) && (
+                    <div className="flex items-center gap-1.5">
+                      <Calendar size={13} className="text-white/30" />
+                      <span className="text-xs text-white/40">{formatDate(item.createdAt)}</span>
+                    </div>
+                  )}
                 </div>
 
                 <div className="flex items-center justify-between p-4">

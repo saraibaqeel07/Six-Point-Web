@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useEffect, useCallback, useRef } from "react";
-import { Search } from "lucide-react";
+import { Search, Calendar } from "lucide-react";
 import PageHeader from "@/app/components/dashboard/pageHeader";
 import Button from "@/app/components/elements/Button";
 import { getClassTypesService } from "@/app/lib/apiServices";
@@ -92,6 +92,7 @@ export default function ProgramsPage() {
               level={program.level || program.difficultyLevel}
               image={program.image || program.thumbnail || program.imageUrl || FALLBACK_IMAGES[index % FALLBACK_IMAGES.length]}
               description={program.description}
+              createdAt={program.createdAt}
             />
           ))}
         </div>
@@ -123,7 +124,12 @@ export default function ProgramsPage() {
   );
 }
 
-function ProgramCard({ id, title, duration, level, image, description }) {
+function formatDate(dateStr) {
+  if (!dateStr) return null;
+  return new Date(dateStr).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" });
+}
+
+function ProgramCard({ id, title, duration, level, image, description, createdAt }) {
   return (
     <div className="group overflow-hidden border border-white/10 bg-[#2d2525] shadow-lg transition-transform duration-300 hover:-translate-y-1">
       <div className="flex flex-col sm:flex-row">
@@ -144,6 +150,13 @@ function ProgramCard({ id, title, duration, level, image, description }) {
             {/* <p className="mt-2 text-xs sm:text-sm tracking-[0.18em] uppercase text-white/70">
               {duration} | {level}
             </p> */}
+
+            {formatDate(createdAt) && (
+              <p className="mt-1.5 flex items-center gap-1.5 text-xs text-white/40">
+                <Calendar size={11} />
+                Added {formatDate(createdAt)}
+              </p>
+            )}
 
             {description && (
               <p className="mt-2 text-xs text-white/50 line-clamp-2">{description}</p>

@@ -1,14 +1,33 @@
 "use client";
-import React, { useRef } from "react";
-import { Swiper, SwiperSlide } from "swiper/react";
-import { Navigation } from "swiper/modules";
-import "swiper/css";
-import "swiper/css/navigation";
+import { useEffect, useState } from "react";
 import Button from "@/app/components/elements/Button";
+import { getClassTypesService } from "@/app/lib/apiServices";
+
+const PLACEHOLDER = "/assets/practice.png";
+
+interface Program {
+  _id?: string;
+  name?: string;
+  title?: string;
+  image?: string;
+  thumbnail?: string;
+  imageUrl?: string;
+}
 
 const PhilosophySection = () => {
-  const prevRef = useRef(null);
-  const nextRef = useRef(null);
+  const [programs, setPrograms] = useState<Program[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    // @ts-ignore
+    getClassTypesService({ activeOnly: true, limit: 4 })
+      .then((res: any) => {
+        const items: Program[] = res?.data || res?.classTypes || res || [];
+        setPrograms(Array.isArray(items) ? items.slice(0, 4) : []);
+      })
+      .catch(() => setPrograms([]))
+      .finally(() => setLoading(false));
+  }, []);
 
   const pillars = [
     { title: "Discipline", desc: "Structure and consistency", icon: "/assets/disciplane.png" },
@@ -21,8 +40,6 @@ const PhilosophySection = () => {
 
   return (
     <div className="bg-[#1D1818] text-white py-10 md:py-16">
-      
-      {/* MAIN CONTAINER (fix overflow) */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-10 lg:px-12">
 
         {/* HEADER */}
@@ -41,8 +58,6 @@ const PhilosophySection = () => {
           <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-x-4 md:gap-x-6 gap-y-12 md:gap-y-16 justify-items-center lg:justify-items-stretch">
             {pillars.map((pillar, index) => (
               <div key={index} className="flex flex-col items-center group">
-                
-                {/* Diamond */}
                 <div className="relative w-16 h-16 sm:w-20 sm:h-20 mb-5">
                   <div className="absolute inset-0 bg-gradient-to-br from-gray-700 to-[#1D1818] rotate-45 shadow-xl border border-gray-600/60" />
                   <div className="absolute inset-0 flex items-center justify-center">
@@ -53,17 +68,10 @@ const PhilosophySection = () => {
                     />
                   </div>
                 </div>
-
-                {/* Text */}
                 <div className="text-center max-w-[200px]">
-                  <h3 className="text-sm sm:text-base lg:text-lg font-bold">
-                    {pillar.title}
-                  </h3>
-                  <p className="text-xs sm:text-sm font-light mt-1 leading-relaxed">
-                    {pillar.desc}
-                  </p>
+                  <h3 className="text-sm sm:text-base lg:text-lg font-bold">{pillar.title}</h3>
+                  <p className="text-xs sm:text-sm font-light mt-1 leading-relaxed">{pillar.desc}</p>
                 </div>
-
               </div>
             ))}
           </div>
@@ -74,7 +82,6 @@ const PhilosophySection = () => {
 
           {/* HEADER */}
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 md:mb-14 gap-6">
-            
             <div>
               <h2 className="text-3xl sm:text-4xl lg:text-5xl uppercase leading-[1.3]">
                 PROGRAMS
@@ -83,76 +90,45 @@ const PhilosophySection = () => {
                 All sessions are 1 hour and coach-led.
               </p>
             </div>
-
             <div className="max-w-sm">
-              <p className="text-xl md:text-2xl lg:text-3xl font-semibold">
-                Private Sessions
-              </p>
+              <p className="text-xl md:text-2xl lg:text-3xl font-semibold">Private Sessions</p>
               <p className="font-light text-base mt-3">
                 Structured training programs for all ages and experience levels.
               </p>
-
-              {/* Arrows */}
-              <div className="flex gap-4 mt-5">
-                <button ref={prevRef} className="text-2xl bg-white text-gray-500 px-3 py-1">
-                  ←
-                </button>
-                <button ref={nextRef} className="text-2xl bg-white text-gray-500 px-3 py-1">
-                  →
-                </button>
-              </div>
             </div>
-
           </div>
 
-          {/* SWIPER (wrapped to prevent overflow) */}
-          <div className="overflow-hidden">
-            <Swiper
-              modules={[Navigation]}
-              spaceBetween={20}
-              slidesPerView={1}
-              onBeforeInit={(swiper) => {
-                if (swiper.params.navigation && typeof swiper.params.navigation === "object") {
-                  swiper.params.navigation.prevEl = prevRef.current;
-                  swiper.params.navigation.nextEl = nextRef.current;
-                }
-              }}
-              navigation={{
-                prevEl: prevRef.current,
-                nextEl: nextRef.current,
-              }}
-              breakpoints={{
-                640: { slidesPerView: 2 },
-                1024: { slidesPerView: 4 },
-              }}
-            >
-              {[
-                { src: "/assets/practice.png", title: "Kids Jiu-Jitsu" },
-                { src: "/assets/adult.png", title: "Adult Jiu-Jitsu" },
-                { src: "/assets/beginners.png", title: "Beginners Program" },
-                { src: "/assets/advanced.png", title: "Advanced Training" },
-              ].map((program, index) => (
-                <SwiperSlide key={index}>
-                  <div>
-                    <div className="group relative overflow-hidden shadow-xl">
-                      <img
-                        src={program.src}
-                        alt={program.title}
-                        className="w-full h-64 sm:h-72 md:h-80 object-cover transition-transform duration-500 group-hover:scale-110"
-                      />
-                    </div>
-                    <h3 className="text-center mt-4 text-sm md:text-base font-semibold">
-                      {program.title}
-                    </h3>
+          {/* GRID — max 4 */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 md:gap-6">
+            {loading
+              ? Array.from({ length: 4 }).map((_, i) => (
+                  <div key={i} className="animate-pulse">
+                    <div className="w-full h-64 sm:h-72 md:h-80 bg-white/10" />
+                    <div className="h-4 bg-white/10 mt-4 mx-auto w-2/3" />
                   </div>
-                </SwiperSlide>
-              ))}
-            </Swiper>
+                ))
+              : programs.map((program, index) => {
+                  const img = program.image || program.thumbnail || program.imageUrl || PLACEHOLDER;
+                  const name = program.name || program.title || "Program";
+                  return (
+                    <div key={program._id || index}>
+                      <div className="group relative overflow-hidden shadow-xl">
+                        <img
+                          src={img}
+                          alt={name}
+                          className="w-full h-64 sm:h-72 md:h-80 object-cover transition-transform duration-500 group-hover:scale-110"
+                          onError={(e) => { (e.currentTarget as HTMLImageElement).src = PLACEHOLDER; }}
+                        />
+                      </div>
+                      <h3 className="text-center mt-4 text-sm md:text-base font-semibold">{name}</h3>
+                    </div>
+                  );
+                })}
           </div>
 
           {/* BUTTON */}
           <div className="flex justify-center mt-10">
-            <Button href="/program" className="hidden sm:inline-flex">
+            <Button href="/program">
               VIEW ALL PROGRAMS
             </Button>
           </div>

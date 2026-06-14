@@ -106,7 +106,7 @@ export default function ReferralsPage() {
         </div>
 
         <div className="flex justify-end">
-          <Button className="inline-flex" disabled={submitting}>
+          <Button type="submit" className="inline-flex" disabled={submitting}>
             {submitting ? "Submitting…" : "Submit Referral"}
           </Button>
         </div>

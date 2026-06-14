@@ -209,9 +209,15 @@ export default function MyBookingsPage() {
                           )}
                         </div>
                         <span className={`px-3 py-1 rounded text-[10px] font-bold uppercase ${
-                          item.status === "pending"
-                            ? "bg-orange-500/20 text-orange-400"
-                            : "bg-green-600/20 text-green-400"
+                          item.status?.toLowerCase() === "pending"
+                            ? "bg-yellow-500/15 text-yellow-400"
+                            : item.status?.toLowerCase() === "approved"
+                            ? "bg-green-600/20 text-green-400"
+                            : item.status?.toLowerCase() === "rejected"
+                            ? "bg-red-500/15 text-red-400"
+                            : item.status?.toLowerCase() === "cancelled"
+                            ? "bg-white/10 text-white/50"
+                            : "bg-white/10 text-white/50"
                         }`}>
                           {item.status}
                         </span>

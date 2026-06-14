@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import Button from "@/app/components/elements/Button";
+import BookClassButton from "@/app/components/elements/BookClassButton";
 
 const navItems = [
   { label: "Home", href: "/" },
@@ -49,9 +49,7 @@ export default function Header() {
         </nav>
 
         {/* CTA - Desktop */}
-        <Button href="#" className="hidden sm:inline-flex">
-          Book a Class
-        </Button>
+        <BookClassButton className="hidden sm:inline-flex bg-gradient-to-r from-[#C1BEB9] to-white hover:from-[#b4b1ac] hover:to-[#f2f2f2] text-black px-6 md:px-7 py-2 md:py-2.5 text-[11px] md:text-[12px] font-medium uppercase tracking-wide transition-all duration-300 shadow-md hover:shadow-lg cursor-pointer" />
 
         {/* Mobile Hamburger */}
         <button
